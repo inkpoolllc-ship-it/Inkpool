@@ -1,7 +1,8 @@
 import { getAuthenticatedUser, getServerSupabase } from '@/lib/supabaseServer'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = getServerSupabase()
@@ -12,7 +13,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const { error } = await supabase
     .from('requests')
     .update({ status, when_text })
-    .eq('id', params.id)
+    .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true })
 }
