@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
+export async function GET(_req: NextRequest) {
+  const url = new URL(_req.url);
   const artistId = url.searchParams.get("artist");
   const poolId = url.searchParams.get("pool");
 
