@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       .eq("code", refCode)
       .maybeSingle();
     if (codeRow && codeRow.referrer_customer_id !== customer?.id) {
-      await supabase
+      const { error: _ignore } = await supabase
         .from("referrals")
         .insert({
           artist_id: (pool as any).artist_id,
@@ -48,8 +48,7 @@ export async function POST(req: Request) {
           status: "pending",
         })
         .select("id")
-        .single()
-        .catch(() => null);
+        .single();
     }
   }
 
