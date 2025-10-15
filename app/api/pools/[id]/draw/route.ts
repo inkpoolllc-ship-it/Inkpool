@@ -1,12 +1,13 @@
 import { getAuthenticatedUser, getServerSupabase } from '@/lib/supabaseServer'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(_request: Request, { params }: { params: { id: string } }) {
+export async function POST(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = getServerSupabase()
-  const poolId = params.id
+  const poolId = id
   const { data: pool, error: poolErr } = await supabase
     .from('pools')
     .select('id, rules')
