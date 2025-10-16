@@ -21,7 +21,7 @@ export async function POST() {
   }
   // capture referral code from cookie if present
   const cookieStore = await cookies()
-  const referral = cookieStore.get('ref')?.value
+  const referral = cookieStore.get('ref')?.value ?? null
   let referred_by: string | null = null
   if (referral) {
     const { data: refArtist } = await supabase.from('artists').select('id').eq('ref_code', referral).maybeSingle()
