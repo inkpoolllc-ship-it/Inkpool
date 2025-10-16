@@ -4,7 +4,7 @@ import { getAuthenticatedUser, getServerSupabase } from '@/lib/supabaseServer'
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const form = await request.formData()
   const pool_id = form.get('pool_id') as string
   const amount_cents = Number(form.get('amount_cents') || 0)
