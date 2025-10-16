@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 export async function POST() {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const { data: existing } = await supabase.from('artists').select('id').eq('id', user.id).maybeSingle()
   if (existing?.id) {
     // Seed demo pool if none exist
@@ -20,7 +20,8 @@ export async function POST() {
     return NextResponse.json({ ok: true, created: false })
   }
   // capture referral code from cookie if present
-  const referral = cookies().get('ref')?.value
+  const cookieStore = await cookies()
+  const referral = cookieStore.get('ref')?.value
   let referred_by: string | null = null
   if (referral) {
     const { data: refArtist } = await supabase.from('artists').select('id').eq('ref_code', referral).maybeSingle()
