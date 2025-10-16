@@ -1,10 +1,23 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getServerSupabase } from '@/lib/supabaseServer'
+import { getAuthenticatedUser } from '@/lib/supabaseServer'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await getServerSupabase()
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+      },
+    },
+  )
   const form = await request.formData()
   const pool_id = form.get('pool_id') as string
   const amount_cents = Number(form.get('amount_cents') || 0)
