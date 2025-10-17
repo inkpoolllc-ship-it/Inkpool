@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 function client() {
@@ -9,7 +9,7 @@ function client() {
   );
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const customerId = url.searchParams.get("customerId");
   if (!customerId) return NextResponse.json({ messages: [] });
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ messages: data ?? [] });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
   const supabase = client();
   const { data: { user } } = await supabase.auth.getUser();

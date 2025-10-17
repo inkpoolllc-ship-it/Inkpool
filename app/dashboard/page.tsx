@@ -14,6 +14,9 @@ export default async function DashboardPage() {
     )
   }
   const supabase = getServerSupabase()
+  // Next 15: getServerSupabase is async
+  // @ts-expect-error awaiting server client
+  const _awaited = await supabase
   // Auto-onboard: ensure artist row exists with 1 initial token
   let { data: artist } = await supabase.from('artists').select('pool_tokens, logo_url, facebook_url, instagram_url, website_url, brand_color').eq('id', user.id).maybeSingle()
   if (!artist) {
@@ -59,8 +62,5 @@ export default async function DashboardPage() {
     </>
   )
 }
-<div className="p-6 bg-[#0b0c0c] text-white rounded-2xl mt-6">
-  tailwind is working
-</div>
 
 

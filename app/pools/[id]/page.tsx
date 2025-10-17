@@ -10,7 +10,7 @@ export default async function PoolDetails({ params }: { params: { id: string } }
       </div>
     )
   }
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const { data: pool } = await supabase
     .from('pools')
     .select('id,name,status,rules,created_at')
@@ -30,7 +30,8 @@ export default async function PoolDetails({ params }: { params: { id: string } }
 
       <div className="space-y-3">
         <h2 className="font-medium">Add Entry</h2>
-        <form action="/api/entries" method="post" className="flex gap-2">
+        {/* entries route was removed; keep UI but disable submit */}
+        <form action="#" method="post" className="flex gap-2" onSubmit={(e)=>e.preventDefault()}>
           <input type="hidden" name="pool_id" value={pool?.id} />
           <input name="amount_cents" type="number" min="100" step="100" placeholder="Amount cents" className="border rounded px-2 py-1" />
           <button className="px-3 py-1 rounded border">Add Entry</button>

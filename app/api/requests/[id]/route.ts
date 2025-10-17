@@ -5,7 +5,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const { id } = await context.params
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const form = await request.formData()
   const status = form.get('status') as 'approved' | 'declined' | 'scheduled'
   const when_text = (form.get('when_text') as string) || null

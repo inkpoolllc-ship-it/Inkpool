@@ -7,7 +7,8 @@ export default function OnboardOnMount() {
   useEffect(() => {
     if (didRun.current) return
     didRun.current = true
-    fetch('/api/onboard', { method: 'POST' }).catch(() => {})
+    // /api/onboard route was removed; noop for now
+    Promise.resolve()
   }, [])
   return null
 }

@@ -10,7 +10,7 @@ export async function GET(
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const supabase = getServerSupabase()
+  const supabase = await getServerSupabase()
   const { data: pool, error } = await supabase
     .from('pools')
     .select('id,name,status,rules,created_at')
