@@ -5,7 +5,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const { id } = await context.params
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await getServerSupabase()
+
+  // getServerSupabase is synchronous now
+  const supabase = getServerSupabase()
   const form = await request.formData()
   const status = form.get('status') as 'approved' | 'declined' | 'scheduled'
   const when_text = (form.get('when_text') as string) || null
@@ -17,5 +19,3 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true })
 }
-
-
