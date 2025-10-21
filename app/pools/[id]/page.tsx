@@ -10,7 +10,7 @@ export default async function PoolDetails({ params }: { params: { id: string } }
       </div>
     )
   }
-  const supabase = await getServerSupabase()
+  const supabase = getServerSupabase()
   const { data: pool } = await supabase
     .from('pools')
     .select('id,name,status,rules,created_at')

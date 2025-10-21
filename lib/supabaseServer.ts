@@ -11,8 +11,7 @@ export function getServiceSupabase(): SupabaseClient {
   return createClient(supabaseUrl, serviceRoleKey)
 }
 
-export async function getServerSupabase() {
-  const cookieStore = await cookies()
+export function getServerSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -21,13 +20,13 @@ export async function getServerSupabase() {
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
-        return cookieStore.get(name)?.value
+        return (cookies() as any).get(name)?.value
       },
       set(name: string, value: string, options: CookieOptions) {
-        cookieStore.set(name, value, options)
+        (cookies() as any).set(name, value, options)
       },
       remove(name: string, options: CookieOptions) {
-        cookieStore.set(name, '', { ...options, maxAge: 0 })
+        (cookies() as any).set(name, '', { ...options, maxAge: 0 })
       },
     },
   })
@@ -45,7 +44,7 @@ export async function getUserFromAuthHeader(authorizationHeader?: string) {
 }
 
 export async function getAuthenticatedUser() {
-  const supabase = await getServerSupabase()
+  const supabase = getServerSupabase()
   const { data } = await supabase.auth.getUser()
   return data.user ?? null
 }
