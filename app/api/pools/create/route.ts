@@ -4,7 +4,10 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await getServerSupabase()
+
+  // getServerSupabase is synchronous now — DO NOT await
+  const supabase = getServerSupabase()
+
   const form = await request.formData()
   const name = (form.get('name') as string) || 'New Pool'
 
@@ -31,5 +34,3 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true, pool })
 }
-
-

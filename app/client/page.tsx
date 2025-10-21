@@ -12,7 +12,10 @@ export default async function ClientPortal() {
       </div>
     )
   }
-  const supabase = await getServerSupabase()
+
+  // getServerSupabase is synchronous now
+  const supabase = getServerSupabase()
+
   // For MVP, show simple aggregates
   const { data: pools } = await supabase.from('pools').select('id,name').order('created_at', { ascending: false })
   const { data: wins } = await supabase.from('winners').select('id, pool_id, prize_cents').order('created_at', { ascending: false })
@@ -47,5 +50,3 @@ export default async function ClientPortal() {
     </div>
   )
 }
-
-

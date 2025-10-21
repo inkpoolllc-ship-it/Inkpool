@@ -4,7 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest) {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await getServerSupabase()
+
+  // getServerSupabase is synchronous now
+  const supabase = getServerSupabase()
+
   const form = await request.formData()
   const kind = form.get('kind') as 'credit' | 'winner'
   const amount_cents = form.get('amount_cents') ? Number(form.get('amount_cents')) : null
@@ -40,5 +43,3 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true })
 }
-
-
