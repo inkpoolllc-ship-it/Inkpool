@@ -21,10 +21,18 @@ export async function POST(request: Request) {
     const product = session.metadata?.product
     const quantity = Number(session.metadata?.quantity || 1)
     if (artistId && product === 'token') {
-      await supabase.rpc('increment_artist_tokens', { artist_id: artistId, qty: quantity }).single().catch(async () => {
+      // Try RPC first; if RPC returns an error or throws, fall back to direct update
+      try {
+        const rpcRes = await supabase.rpc('increment_artist_tokens', { artist_id: artistId, qty: quantity }).single()
+        if ((rpcRes as any)?.error) {
+          const { data: artist } = await supabase.from('artists').select('pool_tokens').eq('id', artistId).single()
+          await supabase.from('artists').update({ pool_tokens: (artist?.pool_tokens ?? 0) + quantity }).eq('id', artistId)
+        }
+      } catch (_e) {
         const { data: artist } = await supabase.from('artists').select('pool_tokens').eq('id', artistId).single()
         await supabase.from('artists').update({ pool_tokens: (artist?.pool_tokens ?? 0) + quantity }).eq('id', artistId)
-      })
+      }
+
       await supabase.from('payments').insert({
         artist_id: artistId,
         stripe_session_id: session.id,
@@ -36,10 +44,16 @@ export async function POST(request: Request) {
       // Referral bonus: if this is the first purchase for referred artist, give referrer +1 token
       const { data: referred } = await supabase.from('artists').select('referred_by, referral_bonus_awarded').eq('id', artistId).single()
       if (referred?.referred_by && !referred?.referral_bonus_awarded) {
-        await supabase.rpc('increment_artist_tokens', { artist_id: referred.referred_by, qty: 1 }).single().catch(async () => {
+        try {
+          const rpcRes = await supabase.rpc('increment_artist_tokens', { artist_id: referred.referred_by, qty: 1 }).single()
+          if ((rpcRes as any)?.error) {
+            const { data: refArtist } = await supabase.from('artists').select('pool_tokens').eq('id', referred.referred_by).single()
+            await supabase.from('artists').update({ pool_tokens: (refArtist?.pool_tokens ?? 0) + 1 }).eq('id', referred.referred_by)
+          }
+        } catch (_e) {
           const { data: refArtist } = await supabase.from('artists').select('pool_tokens').eq('id', referred.referred_by).single()
           await supabase.from('artists').update({ pool_tokens: (refArtist?.pool_tokens ?? 0) + 1 }).eq('id', referred.referred_by)
-        })
+        }
         await supabase.from('artists').update({ referral_bonus_awarded: true }).eq('id', artistId)
       }
     }
@@ -49,5 +63,3 @@ export async function POST(request: Request) {
 }
 
 export const config = { api: { bodyParser: false } }
-
-
