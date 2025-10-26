@@ -4,6 +4,57 @@ import { getServiceSupabase } from '@/lib/supabaseServer'
 import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
+  const rawBody = await request.text()
+  const sig = request.headers.get('stripe-signature') || ''
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string
+  if (!webhookSecret) return NextResponse.json({ error: 'Missing webhook secret' }, { status: 500 })
+
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
+  } catch (err: any) {
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
+  }
+
+  const supabase = getServiceSupabase()
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const artistId = (session.metadata?.artist_id as string) || null
+    if (artistId) {
+      try {
+        const rpcRes = await supabase.rpc('increment_artist_tokens', { artist_id: artistId }).single()
+        const rpcErr = (rpcRes as any)?.error ?? null
+        if (rpcErr) {
+          const { error: updErr } = await supabase
+            .from('artists')
+            .update({ pool_tokens: (rpcRes as any)?.data?.pool_tokens ?? 1 })
+            .eq('id', artistId)
+          if (updErr) {
+            return NextResponse.json({ error: updErr.message }, { status: 400 })
+          }
+        }
+      } catch {
+        const { error: updErr } = await supabase
+          .from('artists')
+          .update({ pool_tokens: 1 })
+          .eq('id', artistId)
+        if (updErr) {
+          return NextResponse.json({ error: updErr.message }, { status: 400 })
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ received: true })
+}
+
+import { NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe'
+import { getServiceSupabase } from '@/lib/supabaseServer'
+import type Stripe from 'stripe'
+
+export async function POST(request: Request) {
   const sig = request.headers.get('stripe-signature') as string
   const body = await request.text()
   let event: Stripe.Event
