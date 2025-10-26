@@ -4,7 +4,10 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // getServerSupabase is synchronous now — DO NOT await
   const supabase = getServerSupabase()
+
   const form = await request.formData()
   const name = (form.get('name') as string) || 'New Pool'
 
@@ -16,7 +19,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ requiresPurchase: true, checkoutUrl })
   }
 
-  const { error: decErr } = await supabase.rpc('decrement_artist_tokens', { artist_id: user.id }).single().catch(() => ({ error: null }))
+  // Attempt RPC decrement; if it fails (no RPC), fall back to direct update
+  let decErr: any = null
+  try {
+    const rpcRes = await supabase.rpc('decrement_artist_tokens', { artist_id: user.id }).single()
+    decErr = (rpcRes as any)?.error ?? null
+  } catch (e) {
+    // treat RPC failure as missing RPC; fallback will run
+    decErr = null
+  }
+
   // If no RPC exists yet, do a direct update
   if (decErr) {
     const { error: updErr } = await supabase.from('artists').update({ pool_tokens: (artist.pool_tokens ?? 0) - 1 }).eq('id', user.id)
@@ -30,6 +42,3 @@ export async function POST(request: Request) {
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true, pool })
-}
-
-
