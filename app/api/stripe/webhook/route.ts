@@ -4,11 +4,14 @@ import { getServiceSupabase } from '@/lib/supabaseServer'
 import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
-  const sig = request.headers.get('stripe-signature') as string
-  const body = await request.text()
+  const rawBody = await request.text()
+  const sig = request.headers.get('stripe-signature') || ''
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string
+  if (!webhookSecret) return NextResponse.json({ error: 'Missing webhook secret' }, { status: 500 })
+
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET as string)
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
   } catch (err: any) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
@@ -17,9 +20,10 @@ export async function POST(request: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const artistId = session.metadata?.artist_id
+    const artistId = (session.metadata?.artist_id as string) || null
     const product = session.metadata?.product
     const quantity = Number(session.metadata?.quantity || 1)
+
     if (artistId && product === 'token') {
       // Try RPC first; if RPC returns an error or throws, fall back to direct update
       try {
