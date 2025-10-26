@@ -42,3 +42,5 @@ export async function POST(request: Request) {
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true, pool })
+}
+}
