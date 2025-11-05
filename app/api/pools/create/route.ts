@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     decErr = null
   }
 
-  // If no RPC exists yet, do a direct update
+  // If RPC indicated an error (or is missing), do a direct update
   if (decErr) {
     const { error: updErr } = await supabase.from('artists').update({ pool_tokens: (artist.pool_tokens ?? 0) - 1 }).eq('id', user.id)
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 })
